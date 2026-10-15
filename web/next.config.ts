@@ -2,9 +2,23 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // The landing page will take "/" later; until then the site opens the admin dashboard.
+  // One app serves both sites: batraconnect.com (public pages) and admin.batraconnect.com (dashboard).
   async redirects() {
-    return [{ source: '/', destination: '/admin', permanent: false }];
+    return [
+      { source: '/', has: [{ type: 'host', value: 'admin\\..+' }], destination: '/admin', permanent: false },
+      {
+        source: '/admin/:path*',
+        has: [{ type: 'host', value: '(www\\.)?batraconnect\\.com' }],
+        destination: 'https://admin.batraconnect.com/admin/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www\\.batraconnect\\.com' }],
+        destination: 'https://batraconnect.com/:path*',
+        permanent: true,
+      },
+    ];
   },
   // The dashboard holds an administrator session, so it may never be framed by another site (clickjacking).
   async headers() {

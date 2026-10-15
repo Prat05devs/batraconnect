@@ -1,16 +1,18 @@
-'use client';
-import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { Login } from '@/views/Login';
+import type { Metadata } from 'next';
+import { Providers } from '../providers';
+import { AdminGate } from '@/components/admin-gate';
+
+export const metadata: Metadata = {
+  title: 'Batra Connect Admin',
+  description: 'Administration dashboard for the Batra Connect app.',
+  robots: { index: false, follow: false },
+};
 
 /** Everything under /admin requires an administrator; anyone else sees the sign-in screen. */
 export default function AdminLayout({ children }: React.PropsWithChildren) {
-  const { user, ready } = useAuth();
-  if (!ready)
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-primary" />
-      </div>
-    );
-  return user ? children : <Login />;
+  return (
+    <Providers>
+      <AdminGate>{children}</AdminGate>
+    </Providers>
+  );
 }
