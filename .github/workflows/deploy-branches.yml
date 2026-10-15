@@ -1,0 +1,20 @@
+# Hostinger deploys one app per branch with the app at the top level.
+# On every push to main, publish web/ to deploy-admin and backend/ to deploy-api.
+name: Update deploy branches
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency: deploy-branches
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish web/ and backend/
+        run: |
+          git push --force origin "$(git subtree split --prefix=web HEAD):refs/heads/deploy-admin"
+          git push --force origin "$(git subtree split --prefix=backend HEAD):refs/heads/deploy-api"
