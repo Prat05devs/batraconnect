@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- tapOn: ".*Guide.*"
+- assertVisible: "Your app guide"
+- tapOn: "Ask the app guide"
+- inputText: "quantum pineapple"
+- tapOn: "Send question"
+- hideKeyboard
+- assertVisible: ".*matching answer in the app.*"
+- tapOn: "Ask the app guide"
+- inputText: "book a meeting"
+- tapOn: "Send question"
+- hideKeyboard
+- assertVisible: ".*I cannot reserve a meeting.*"
+- scrollUntilVisible:
+    element: "Prepare meeting notes"
+- tapOn: "Prepare meeting notes"
+- assertVisible: ".*Jan Samvad.*"

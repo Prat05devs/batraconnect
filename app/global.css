@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Batra Connect brand colours expressed as shadcn/ui (React Native Reusables) theme tokens. */
+@layer base {
+  :root {
+    --background: 220 42.9% 97.3%;
+    --foreground: 219 71.4% 16.5%;
+    --card: 0 0% 100%;
+    --card-foreground: 219 71.4% 16.5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 219 71.4% 16.5%;
+    --primary: 216 93.7% 43.7%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 100% 95.9%;
+    --secondary-foreground: 216 93.7% 43.7%;
+    --muted: 218 30.8% 94.9%;
+    --muted-foreground: 217 19% 40.2%;
+    --accent: 217 100% 95.9%;
+    --accent-foreground: 219 71.4% 16.5%;
+    --destructive: 4 76.5% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 167 87.8% 25.7%;
+    --success-foreground: 0 0% 100%;
+    --warning: 42 100% 27.1%;
+    --border: 217 31% 88.6%;
+    --input: 216 17.1% 59.8%;
+    --ring: 216 93.7% 43.7%;
+    --radius: 1rem;
+  }
+}

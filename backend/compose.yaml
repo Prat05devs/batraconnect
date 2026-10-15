@@ -1,0 +1,40 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://batra:${DB_PASSWORD:?Set DB_PASSWORD}@db:5432/batra_connect
+      CORS_ORIGINS: ${CORS_ORIGINS:?Set allowed web origins}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
+      CONFIG_MASTER_KEY: ${CONFIG_MASTER_KEY:?Set CONFIG_MASTER_KEY (32+ random characters)}
+      SESSION_DAYS: ${SESSION_DAYS:-7}
+      REQUIRE_VERIFIED_CONTACT: ${REQUIRE_VERIFIED_CONTACT:-true}
+      REQUIRE_CLOSURE_EVIDENCE: ${REQUIRE_CLOSURE_EVIDENCE:-true}
+      RUN_JOBS: ${RUN_JOBS:-true}
+      JOB_INTERVAL_SECONDS: ${JOB_INTERVAL_SECONDS:-60}
+    volumes:
+      - media:/srv/batra/data/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: batra
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      POSTGRES_DB: batra_connect
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batra -d batra_connect"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  postgres:
+  media:

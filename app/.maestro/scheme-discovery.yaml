@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element:
+      text: ".*Schemes & benefits.*"
+- tapOn: ".*Schemes & benefits.*"
+- tapOn: "Search schemes"
+- inputText: "PM KISAN"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "1 scheme found"
+- assertVisible: "1 scheme found"
+- tapOn: ".*PM-KISAN.*"
+- assertVisible: "Support offered"
+- scrollUntilVisible:
+    element: "Source & review date"
+- assertVisible: "Source & review date"
+- assertVisible: ".*manually reviewed snapshot.*"

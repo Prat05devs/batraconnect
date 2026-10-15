@@ -1,0 +1,52 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+web-build/
+.expo/
+*.tsbuildinfo
+test-results/
+coverage/
+
+# Secrets: every env file except the documented examples and the public web build setting
+.env
+.env.*
+!.env.example
+!.env.test.example
+!web/.env.production
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+
+# Runtime data, uploads and database backups
+backend/data/
+backups/
+*.dump
+*.log
+
+# Working material kept outside the repository (client documents, recovered chats, scratch)
+/context/
+/assets/
+/design/
+/tmp/
+/manifest.json
+/SHA256SUMS.txt
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Expo template licence (not this project's licence)
+/app/LICENSE
+
+# Internal notes on how gallery photos were prepared from the client's source document (kept local)
+/app/docs/achievement-content.md
+/app/scripts/extract-achievement-assets.py
+/app/assets/achievements/manifest.json

@@ -1,0 +1,26 @@
+# Disposable installed test build only: clearState removes app-local data.
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Ideas & projects.*"
+- tapOn: "Ideas & projects.*"
+- tapOn: "Write an idea"
+- tapOn: "Idea title"
+- inputText: "Language check draft"
+- hideKeyboard
+- tapOn: "हिन्दी में पढ़ें"
+- assertVisible: "विचार का शीर्षक"
+- assertVisible: "Language check draft"
+- stopApp
+- launchApp
+- assertVisible: "नमस्ते, उत्तराखंड"
+- scrollUntilVisible:
+    element: "विचार और परियोजनाएँ.*"
+- tapOn: "विचार और परियोजनाएँ.*"
+- tapOn: "अपना विचार जारी रखें"
+- assertVisible: "Language check draft"
+- tapOn: "Switch to English"
+- assertVisible: "Idea title"
+- assertVisible: "Language check draft"

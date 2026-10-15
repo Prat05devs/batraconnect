@@ -1,0 +1,55 @@
+# Run only on a disposable installed test build: clearState removes app-local data.
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Namaste, Uttarakhand"
+- tapOn: "Report a problem"
+- scrollUntilVisible:
+    element: "Continue"
+- tapOn: "Continue"
+- assertVisible: "Choose an issue category to continue."
+- scrollUntilVisible:
+    element:
+      text: ".*Road & Transport.*"
+    direction: UP
+- tapOn: ".*Road & Transport.*"
+- scrollUntilVisible:
+    element: "Continue"
+- tapOn: "Continue"
+- tapOn: "Issue title"
+- inputText: "TEST Library crossing"
+- tapOn: "Description"
+- inputText: "The marked crossing near the public library needs repair."
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Continue"
+- tapOn: "Continue"
+- scrollUntilVisible:
+    element: "Continue without photos"
+- tapOn: "Continue without photos"
+- scrollUntilVisible:
+    element: "District"
+- tapOn: "District"
+- inputText: "Haridwar"
+- scrollUntilVisible:
+    element: "Locality / landmark"
+- tapOn: "Locality / landmark"
+- inputText: "Public library"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Continue"
+- tapOn: "Continue"
+- assertVisible: "Review your report"
+- scrollUntilVisible:
+    element: "Save local report"
+- tapOn: "Save local report"
+- assertVisible: "Your report is saved"
+- assertVisible: "This is a local demo report. It has not been submitted to a government department."
+- stopApp
+- launchApp
+- tapOn: ".*My requests.*"
+- tapOn: ".*TEST Library crossing.*"
+- assertVisible: "Saved locally"
+- assertVisible: "TEST Library crossing"
+- assertVisible: "Public library, Haridwar"
