@@ -114,6 +114,7 @@ const errors: Record<string, string> = {
   CITIZEN_ROLE: 'नागरिक खाते को स्टाफ में नहीं बदला जा सकता।',
   JURISDICTION_REQUIRED: 'फील्ड और विभाग स्टाफ के लिए कम से कम एक जिला और श्रेणी चुनें।',
   CONFLICT: 'यह रिकॉर्ड पहले से मौजूद है।',
+  INVALID_REFERENCE: 'जुड़ा हुआ रिकॉर्ड मौजूद नहीं है।',
   ORIGIN_DENIED: 'यह वेब पता अनुमत नहीं है।',
   BODY_TOO_LARGE: 'अनुरोध बहुत बड़ा है।',
 };
