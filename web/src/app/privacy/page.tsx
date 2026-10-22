@@ -72,8 +72,8 @@ export default function Privacy() {
           office staff who arrange the meeting.
         </li>
         <li>
-          <strong>Service providers</strong> process data only to run the service: Supabase (database and
-          photo storage), Hostinger (hosting), Expo (push notifications) and our email and SMS providers.
+          <strong>Service providers</strong> process data only to run the service: DigitalOcean (server,
+          database and photo storage), Hostinger (website hosting), Expo (push notifications) and our email and SMS providers.
         </li>
         <li>We share information with other authorities only where the law requires it.</li>
       </ul>

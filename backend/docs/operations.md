@@ -6,10 +6,10 @@ For the person deploying and running the Batra Connect API. Everything here is i
 
 | Item | Why | Where it goes |
 |---|---|---|
-| A Linux host with Docker and root access (2 vCPU / 4 GB is ample to start), e.g. a Hostinger **KVM VPS** — see section 9 | Runs API, PostgreSQL, Caddy and backups | — |
+| A Linux host with Docker and root access (2 vCPU / 4 GB is ample to start; 2 GB works), e.g. a DigitalOcean droplet (Ubuntu 26.04 LTS) — see section 9 | Runs API, PostgreSQL, backups and the shared Caddy proxy | — |
 | A random master key (`openssl rand -base64 48`), stored safely outside the server too | Encrypts provider keys saved in the dashboard; the API refuses to start without it | `CONFIG_MASTER_KEY` |
 | The web dashboard's address, e.g. `https://admin.batraconnect.com` | Only listed web origins may call the API from a browser | `CORS_ORIGINS` |
-| API domain, e.g. `api.batraconnect.com`, with a DNS A/AAAA record to the host | HTTPS certificate is issued automatically for it | `API_DOMAIN` |
+| API domain, e.g. `api.batraconnect.com`, with a DNS A/AAAA record to the host | HTTPS certificate is issued automatically for it | `deploy/api.caddy` |
 | SMTP account (any provider: Amazon SES, Zoho, Google Workspace relay…) | Verification, password-reset and staff-invite codes, email updates. Nobody can verify or reset until one is set | `SMTP_URL`, `EMAIL_FROM`, or the dashboard's Integrations page |
 | Twilio account + Indian DLT-registered sender and templates (optional) | SMS codes and SMS updates. Indian operators drop unregistered SMS | `SMS_PROVIDER=twilio`, `TWILIO_*` |
 | Expo account + EAS project | Push notifications and app builds | app `extra.eas.projectId`; optional `EXPO_ACCESS_TOKEN` |
@@ -19,16 +19,7 @@ For the person deploying and running the Batra Connect API. Everything here is i
 
 ## 2. Deploy (Docker on a VPS)
 
-Using Supabase and Hostinger's Node.js hosting instead? Follow section 9; sections 3–8 apply to both.
-
-```sh
-cd backend
-cp .env.example .env            # fill in every value marked for production; keep this file out of git
-docker compose -f compose.yaml -f compose.production.yaml up -d --build
-docker compose -f compose.yaml -f compose.production.yaml exec api \
-  sh -c 'STAFF_NAME="…" STAFF_EMAIL="…" STAFF_PASSWORD="…" STAFF_ROLE=admin node scripts/create-staff.js'
-curl https://$API_DOMAIN/health/ready
-```
+The production Compose file has no proxy or database of its own. It uses the server's shared services: one Caddy serves every site with HTTPS (`deploy/api.caddy` is the API's entry), and one PostgreSQL holds a separate database per app (the API's is `batra`, created with `server add-db batra`). The server, the proxy and deployments are all handled by [`infra/server.sh`](../../infra/server.sh); the steps are in [`infra/README.md`](../../infra/README.md).
 
 The API refuses to start in production with unsafe settings: localhost or non-HTTPS CORS origins, a missing or short `CONFIG_MASTER_KEY`, or incomplete S3/Twilio credentials. Migrations run automatically and safely at start-up, even with several replicas. In production, messages are never printed to the log in place of sending, because they can contain sign-in codes.
 
@@ -83,54 +74,31 @@ If your host can't run long-lived processes, set `RUN_JOBS=false` and run `npm r
 
 ## 8. Upgrading
 
-`git pull && docker compose -f compose.yaml -f compose.production.yaml up -d --build`. New migrations apply on start. Take a fresh backup first and test the restore of anything with a new migration on a staging copy.
+`server deploy /opt/apps/batraconnect/backend` on the droplet (it pulls, backs up, rebuilds and waits until healthy). New migrations apply on start. Take a fresh backup first and test the restore of anything with a new migration on a staging copy.
 
-## 9. Production layout: Supabase + Hostinger
+## 9. Production layout: DigitalOcean droplet + Hostinger
 
 | Address | What runs there | Where |
 |---|---|---|
-| `api.batraconnect.com` | This API (Node.js app, root directory `backend`, start command `npm start`) | Hostinger Node.js web app |
-| `admin.batraconnect.com` | The web dashboard (`../web`, Next.js) | A second Hostinger Node.js web app |
-| `batraconnect.com` | The landing page (built later) | Hostinger web hosting |
-| — | PostgreSQL database, and the photo bucket | Supabase (region: Mumbai, `ap-south-1`) |
+| `api.batraconnect.com` | This API, on the droplet's shared Caddy (HTTPS) and PostgreSQL, with nightly backups | DigitalOcean droplet |
+| `admin.batraconnect.com` | The web dashboard (`../web`, Next.js) | Hostinger Node.js web app |
+| `batraconnect.com` | The landing page (same Next.js app) | Hostinger |
 
-### Supabase
-1. Create the project in **Mumbai**. Keep the database password in your password manager.
-2. **Connect → Session pooler** connection string (works over IPv4; the direct connection is IPv6-only). Do not use the transaction pooler (port 6543).
-3. **Project Settings → Database → SSL configuration:** turn on *Enforce SSL*, download the certificate and save it as `backend/certs/supabase-ca.crt`.
-4. **Project Settings → Data API:** turn the Data API off. All data goes through this API. As a second guard, the API turns on row-level security and removes Data API access from every table each time it starts.
-5. **Storage:** create a **private** bucket (e.g. `batra-media`), then under Storage settings enable the S3 connection and create an access key.
+The app and the dashboard call the API only at `https://api.batraconnect.com`.
 
-### Hostinger: API app (`api.batraconnect.com`)
-Node.js 24, root directory `backend`, start command `npm start`, and these environment variables:
+### Droplet (`api.batraconnect.com`)
+The droplet hosts several sites behind one shared Caddy proxy, all managed with `infra/server.sh`. Follow [`infra/README.md`](../../infra/README.md): create the droplet and its Cloud Firewall, run `server setup` once, then the "Batra Connect API" steps. Every release after that is `server deploy /opt/apps/batraconnect/backend`, which takes a backup first and waits until the API is healthy.
 
-```
-NODE_ENV=production
-DATABASE_URL=postgresql://postgres.<ref>:<password>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=verify-full&sslrootcert=certs/supabase-ca.crt
-DATABASE_POOL_SIZE=5
-CONFIG_MASTER_KEY=<openssl rand -base64 48>
-CORS_ORIGINS=https://admin.batraconnect.com
-TRUST_PROXY_HOPS=1
-S3_BUCKET=batra-media
-S3_ENDPOINT=https://<ref>.storage.supabase.co/storage/v1/s3
-S3_REGION=ap-south-1
-S3_FORCE_PATH_STYLE=true
-S3_ACCESS_KEY_ID=…
-S3_SECRET_ACCESS_KEY=…
-```
-
-Do not set `PORT` or `HOST` unless Hostinger asks you to. Email, SMS and push keys can be entered later in the dashboard (Integrations). Then:
-
-1. Open `https://api.batraconnect.com/health/ready`. It should say `ready` (migrations run automatically on the first start).
-2. Create the first administrator from Hostinger's terminal/SSH in the `backend` folder: `STAFF_NAME="…" STAFF_EMAIL="…" STAFF_PASSWORD="…" STAFF_ROLE=admin npm run create-staff`. If there is no terminal, run the same command once from your own computer with the production `DATABASE_URL`.
-3. Sign in to the dashboard and open **Overview → System health → "Your address, as the server sees it"**. It must be your real public address. If the dashboard shows a red warning, increase `TRUST_PROXY_HOPS` by one and restart; otherwise everyone shares one rate limit.
-4. Background jobs (message delivery, deadline escalation, reminders, cleanup) run inside the API. If the host puts idle apps to sleep, add a free uptime monitor (e.g. UptimeRobot) on `https://api.batraconnect.com/health/ready` every 5 minutes. It also alerts you if the API goes down.
+Then:
+1. Sign in to the dashboard and open **Overview → System health → "Your address, as the server sees it"**. It must be your real public address (`TRUST_PROXY_HOPS` is 1 for the shared proxy).
+2. **Off-host backups:** database dumps land in `/opt/backups/postgres/batra/` (nightly and before every deploy), and the API's own backup adds database and photo archives to `/opt/apps/batraconnect/backend/backups`. Copy both off the droplet every day, e.g. with `rclone` to a DigitalOcean Spaces bucket from cron. Run the monthly restore test in section 4.
+3. Add an uptime monitor (e.g. UptimeRobot) on `https://api.batraconnect.com/health/ready` every 5 minutes.
 
 ### Hostinger: dashboard app (`admin.batraconnect.com`)
-Node.js 24, root directory `web`, build `npm run build`, start `npm start`, environment `NEXT_PUBLIC_API_URL=https://api.batraconnect.com` (it is baked in at build time, so rebuild after changing it).
+Node.js 24, root directory `web`, build `npm run build`, start `npm start`, environment `NEXT_PUBLIC_API_URL=https://api.batraconnect.com` (it is baked in at build time, so rebuild after changing it; `web/.env.production` already sets it).
 
 ### Mobile app
-Set the production API address (`https://api.batraconnect.com`) in the app's EAS build profile before building for the stores.
+The `preview` and `production` EAS build profiles already set `EXPO_PUBLIC_API_URL=https://api.batraconnect.com`; release builds also fall back to it.
 
-### Backups
-Supabase backs the database up daily on paid plans (the free plan has no downloadable backups and pauses after a week without activity). For a government-facing service, use at least the Pro plan, and keep the monthly restore test in section 4 using a `pg_dump` of the Supabase database.
+### Alternative: managed database
+The API also runs against a managed PostgreSQL (for example Supabase or DigitalOcean Managed PostgreSQL) instead of the bundled container. Set `DATABASE_URL` with `sslmode=verify-full` and the provider's CA certificate in `certs/`, and `DATABASE_POOL_SIZE` below the provider's connection limit; see the comments in `.env.example`.

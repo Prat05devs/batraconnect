@@ -1,9 +1,20 @@
-# docker compose -f compose.yaml -f compose.production.yaml up -d --build
-# Adds HTTPS termination with Caddy and a nightly database/media backup. Caddy is the only public port.
+# docker compose -f compose.yaml -f compose.production.yaml up -d --build   (on the server: server deploy <this folder>)
+# Uses the server's shared services (infra/server.sh): the Caddy proxy on the "edge" network serves the API with HTTPS
+# (deploy/api.caddy is its entry), and the shared PostgreSQL on the private "data" network holds the "batra" database
+# (created with: server add-db batra; its password is DB_PASSWORD). The local db container is not started.
+# Adds a nightly database/media backup. Nothing here publishes a port.
 services:
   api:
     ports: !reset []
+    depends_on: !reset {}
+    networks:
+      default: {}
+      data: {}
+      edge:
+        # Unique name on the shared network: every project's "api" service would otherwise answer to "api".
+        aliases: [batra-api]
     environment:
+      DATABASE_URL: postgres://batra:${DB_PASSWORD:?Set DB_PASSWORD}@postgres:5432/batra
       TRUST_PROXY_HOPS: 1
       # Email can be configured here or later in the web dashboard (Integrations); codes are not sent until one is set.
       SMTP_URL: ${SMTP_URL:-}
@@ -23,37 +34,25 @@ services:
     logging:
       driver: json-file
       options: { max-size: "20m", max-file: "10" }
-  caddy:
-    image: caddy:2.10-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN, e.g. api.batraconnect.com}
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on: [api]
-    restart: unless-stopped
   backup:
     image: postgres:17-alpine
     environment:
-      PGHOST: db
+      PGHOST: postgres
       PGUSER: batra
       PGPASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
-      PGDATABASE: batra_connect
+      PGDATABASE: batra
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:
       - ./scripts/backup.sh:/backup.sh:ro
       - media:/media:ro
       - ${BACKUP_DIR:-./backups}:/backups
     entrypoint: ["/bin/sh","-c","while true; do /bin/sh /backup.sh || echo 'backup failed' >&2; sleep 86400; done"]
-    depends_on:
-      db:
-        condition: service_healthy
+    networks: [data]
     restart: unless-stopped
-volumes:
-  caddy_data:
-  caddy_config:
+  db:
+    profiles: [local-db]
+networks:
+  edge:
+    external: true
+  data:
+    external: true

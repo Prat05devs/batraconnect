@@ -18,7 +18,7 @@ The app and the dashboard never access the database directly; everything goes th
 
 ## Deploy
 
-Production uses Supabase (PostgreSQL and photo storage) and Hostinger Node.js hosting for `api.batraconnect.com` and `admin.batraconnect.com`. Follow [`backend/docs/operations.md`](backend/docs/operations.md), section 9. Architecture notes: [`backend/docs/architecture.md`](backend/docs/architecture.md).
+The API and its PostgreSQL database run on a DigitalOcean droplet at `api.batraconnect.com` (Docker Compose). The droplet hosts several sites behind one shared HTTPS proxy, all set up and deployed with [`infra/server.sh`](infra/server.sh); see [`infra/README.md`](infra/README.md). The dashboard runs on Hostinger at `admin.batraconnect.com`. The app and the dashboard both call `https://api.batraconnect.com`. Operations: [`backend/docs/operations.md`](backend/docs/operations.md). Architecture notes: [`backend/docs/architecture.md`](backend/docs/architecture.md).
 
 ## Security
 

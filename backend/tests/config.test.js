@@ -68,4 +68,5 @@ test('production refuses a remote database without TLS and accepts Supabase with
   });
   assert.equal(ok.poolSize, 5);
   assert.doesNotThrow(() => config({ ...prod, DATABASE_URL: 'postgres://batra:pw@db:5432/batra_connect' }));
+  assert.doesNotThrow(() => config({ ...prod, DATABASE_URL: 'postgres://batra:pw@postgres:5432/batra' }));
 });
