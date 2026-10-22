@@ -4,9 +4,14 @@ import * as SecureStore from 'expo-secure-store';
 import { ApiError, createApiClient, type Session, type Account } from './api-client';
 import { useLanguage } from './language';
 import { devicePushToken } from './push';
+// Release builds never fall back to a local address: without EXPO_PUBLIC_API_URL they use the production API.
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_URL ??
-  (Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://127.0.0.1:4000');
+  (!__DEV__
+    ? 'https://api.batraconnect.com'
+    : Platform.OS === 'android'
+      ? 'http://10.0.2.2:4000'
+      : 'http://127.0.0.1:4000');
 export const api = createApiClient(API_BASE);
 const KEY = 'batra-connect.session.v1',
   PUSH_KEY = 'batra-connect.push-token.v1';
