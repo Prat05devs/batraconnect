@@ -1,0 +1,20 @@
+# The API's entry in the server's shared proxy: server add-site api.batraconnect.com backend/deploy/api.caddy
+# HTTPS (Let's Encrypt) is automatic once the DNS A/AAAA record for the domain points at the server.
+api.batraconnect.com {
+	log
+	encode zstd gzip
+	request_body {
+		max_size 11MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	@metrics path /metrics
+	respond @metrics 404
+	reverse_proxy batra-api:4000 {
+		health_uri /health/ready
+		# Check often so the API is served within seconds of a restart or redeploy (the default is 30s).
+		health_interval 5s
+	}
+}

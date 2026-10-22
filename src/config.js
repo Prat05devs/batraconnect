@@ -73,8 +73,9 @@ export function config(env = process.env) {
         'TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM are required with SMS_PROVIDER=twilio.',
       );
     const database = new URL(options.url);
+    // Same-host databases need no TLS: "db" is the bundled container, "postgres" the server's shared one (infra/server.sh).
     if (
-      !['localhost', '127.0.0.1', 'db'].includes(database.hostname) &&
+      !['localhost', '127.0.0.1', 'db', 'postgres'].includes(database.hostname) &&
       !['require', 'verify-ca', 'verify-full', 'no-verify'].includes(database.searchParams.get('sslmode'))
     )
       problems.push(
