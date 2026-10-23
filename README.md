@@ -20,6 +20,8 @@ The app and the dashboard never access the database directly; everything goes th
 
 The API and its PostgreSQL database run on a DigitalOcean droplet at `api.batraconnect.com` (Docker Compose). The droplet hosts several sites behind one shared HTTPS proxy, all set up and deployed with [`infra/server.sh`](infra/server.sh); see [`infra/README.md`](infra/README.md). The dashboard runs on Hostinger at `admin.batraconnect.com`. The app and the dashboard both call `https://api.batraconnect.com`. Operations: [`backend/docs/operations.md`](backend/docs/operations.md). Architecture notes: [`backend/docs/architecture.md`](backend/docs/architecture.md).
 
+Hostinger builds the dashboard from the `deploy-admin` branch (the `web/` folder at the top level). After pushing `main`, run `scripts/publish-deploy-branches.sh` to update it (and `deploy-api` with `backend/`).
+
 ## Security
 
 - Secrets never go in this repository: every `.env` file is ignored except the documented `*.example` files. Provider keys (email, SMS, push) are entered in the dashboard and stored encrypted.
