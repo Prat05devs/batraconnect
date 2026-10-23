@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Download, Printer, Search } from 'lucide-react';
@@ -23,6 +24,7 @@ import {
 import { BreakdownTable } from '@/views/Overview';
 import { api, download, errorMessage } from '@/lib/api';
 import { useApi } from '@/lib/use-api';
+import { usePhoto } from '@/lib/use-photo';
 import { DISTRICTS, STATUSES, type Category, type Complaint, type Insights } from '@/lib/types';
 
 const PAGE = 50;
@@ -242,6 +244,26 @@ export function Reports() {
   );
 }
 type Staff = { id: string; name: string; openAssignments: number; overdueAssignments: number };
+/** A resident's evidence photo or an officer's proof of the completed work; opens full size in a new tab. */
+function ReportPhoto({ id, purpose }: { id: string; purpose?: string }) {
+  const src = usePhoto(id);
+  const label = purpose === 'resolution' ? 'Completed work' : 'Sent by the resident';
+  return (
+    <figure className="w-40">
+      <a
+        href={src ?? undefined}
+        target="_blank"
+        rel="noreferrer"
+        className="relative block size-40 overflow-hidden rounded-lg border bg-muted"
+      >
+        {/* unoptimized: the photo is private and loaded through the signed-in blob URL. */}
+        {src && <Image src={src} alt={label} fill unoptimized className="object-cover" />}
+      </a>
+      <figcaption className="mt-1 text-xs text-muted-foreground">{label}</figcaption>
+    </figure>
+  );
+}
+
 export function ReportDetail() {
   const { id } = useParams<{ id: string }>();
   const report = useApi<{ complaint: Complaint }>(`/complaints/${id}`);
@@ -334,6 +356,18 @@ export function ReportDetail() {
                   )}
                 </CardContent>
               </Card>
+              {!!c.media?.length && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Photos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-3">
+                    {c.media.map(m => (
+                      <ReportPhoto key={m.id} id={m.id} purpose={m.purpose} />
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardHeader>
                   <CardTitle>Activity</CardTitle>
