@@ -15,6 +15,7 @@ import { useFeature } from './app-config';
 import { AchievementHighlights } from './AchievementScreens';
 import { filterReports } from './report-search';
 import { categories } from './model';
+import { disclaimer, links, open } from './legal';
 import { Button, Body, Card, C, Field, Icon, Notice, Page, Row, Section, Title, s } from './ui';
 export { Services } from './ServiceScreens';
 export function Home() {
@@ -402,6 +403,44 @@ export function Profile() {
         title={copy('Schemes & benefits', 'योजनाएँ और लाभ')}
         icon="gift-outline"
         onPress={() => router.push('/schemes')}
+      />
+      <Section verbatim>{copy('About Batra Connect', 'बत्रा कनेक्ट के बारे में')}</Section>
+      <Body verbatim>{copy(disclaimer.en, disclaimer.hi)}</Body>
+      <Row
+        verbatim
+        title={copy('Send feedback', 'सुझाव भेजें')}
+        detail={copy('Tell us what works and what to improve', 'बताएँ क्या अच्छा है और क्या सुधारें')}
+        icon="chatbubble-ellipses-outline"
+        onPress={() => open(links.feedback)}
+      />
+      <Row
+        verbatim
+        title={copy('About the app and sources', 'ऐप के बारे में और स्रोत')}
+        icon="information-circle-outline"
+        onPress={() => open(links.about)}
+      />
+      <Row
+        verbatim
+        title={copy('Privacy policy', 'गोपनीयता नीति')}
+        icon="shield-checkmark-outline"
+        onPress={() => open(links.privacy)}
+      />
+      <Row
+        verbatim
+        title={copy('Terms of use', 'उपयोग की शर्तें')}
+        icon="document-text-outline"
+        onPress={() => open(links.terms)}
+      />
+      <Row
+        verbatim
+        title={copy('Delete your account', 'अपना खाता हटाएँ')}
+        detail={
+          session
+            ? copy('In Account settings', 'खाता सेटिंग में')
+            : copy('How deletion works', 'खाता हटाने की प्रक्रिया')
+        }
+        icon="trash-outline"
+        onPress={() => (session ? router.push('/account') : open(links.deleteAccount))}
       />
       {canActAsResident(role) && (
         <>

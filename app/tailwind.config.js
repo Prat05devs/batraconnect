@@ -3,6 +3,9 @@ const { hairlineWidth } = require('nativewind/theme');
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
+  // The app is light-only (app.json). 'class' keeps dark: variants off unless a class is set, and avoids NativeWind's
+  // web error when dark mode is left as 'media'.
+  darkMode: 'class',
   presets: [require('nativewind/preset')],
   theme: {
     extend: {

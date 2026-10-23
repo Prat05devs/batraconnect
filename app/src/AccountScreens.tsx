@@ -10,6 +10,7 @@ import { roleLabel } from './labels';
 import { pushState, type PushState } from './push';
 import { Badge, Chips, Gate, Loading, Toggle, useCopy, useFormat, useResource } from './connected-ui';
 import { Body, Button, Card, Field, Notice, Page, Row, Section, Title, s } from './ui';
+import { disclaimer, links, open } from './legal';
 
 const phoneHint = (copy: ReturnType<typeof useCopy>) =>
   copy(
@@ -212,8 +213,8 @@ export function SignIn() {
           {mode === 'register' && (
             <Text verbatim style={s.small}>
               {copy(
-                'Use at least 12 characters. We will email you a code to verify your address. Staff accounts are created by the office administrator.',
-                'कम से कम 12 अक्षर रखें। ईमेल सत्यापन के लिए हम कोड भेजेंगे। स्टाफ खाते कार्यालय प्रशासक बनाते हैं।',
+                'Use at least 12 characters. We will email you a code to verify your address. Staff accounts are created by an administrator.',
+                'कम से कम 12 अक्षर रखें। ईमेल सत्यापन के लिए हम कोड भेजेंगे। स्टाफ खाते प्रशासक बनाते हैं।',
               )}
             </Text>
           )}
@@ -265,6 +266,28 @@ export function SignIn() {
           setPassword('');
         }}
       />
+      <Text verbatim style={s.small}>
+        {copy('By continuing you agree to the ', 'आगे बढ़कर आप ')}
+        <Text
+          verbatim
+          style={{ fontWeight: '600', textDecorationLine: 'underline' }}
+          onPress={() => open(links.terms)}
+        >
+          {copy('Terms of use', 'उपयोग की शर्तों')}
+        </Text>
+        {copy(' and ', ' और ')}
+        <Text
+          verbatim
+          style={{ fontWeight: '600', textDecorationLine: 'underline' }}
+          onPress={() => open(links.privacy)}
+        >
+          {copy('Privacy policy', 'गोपनीयता नीति')}
+        </Text>
+        {copy('.', ' से सहमत होते हैं।')}
+      </Text>
+      <Text verbatim style={s.small}>
+        {copy(disclaimer.en, disclaimer.hi)}
+      </Text>
       {Platform.OS === 'web' && (
         <Text verbatim style={s.small}>
           {copy(
@@ -870,7 +893,8 @@ function AccountSettingsBody() {
                     method: 'DELETE',
                     body: { password: deletePassword, confirm: 'DELETE' },
                   });
-                  await signOut().catch(() => {});
+                  // The server has already ended every session and removed this device's push token.
+                  await signOut(false);
                   router.dismissTo('/');
                 })
               }

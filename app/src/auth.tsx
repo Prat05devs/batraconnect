@@ -21,7 +21,8 @@ type AuthState = {
   ready: boolean;
   signIn: (email: string, password: string, name?: string, phone?: string) => Promise<void>;
   acceptSession: (session: Session) => Promise<void>;
-  signOut: () => Promise<void>;
+  /** remote=false only clears this device, for when the server has already ended the session (account deleted). */
+  signOut: (remote?: boolean) => Promise<void>;
   refresh: () => Promise<void>;
   updateUser: (user: Account) => void;
   /** Authenticated request; an expired session signs the device out. */
@@ -108,9 +109,9 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
     });
     await acceptSession(result);
   }
-  async function signOut() {
+  async function signOut(remote = true) {
     ++generation.current;
-    const token = current.current?.token;
+    const token = remote ? current.current?.token : undefined;
     // Delete the device credential before publishing a signed-out UI.
     if (Platform.OS !== 'web') await SecureStore.deleteItemAsync(KEY);
     const push = Platform.OS === 'web' ? null : await SecureStore.getItemAsync(PUSH_KEY).catch(() => null);
