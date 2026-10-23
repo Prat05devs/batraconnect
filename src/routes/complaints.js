@@ -181,21 +181,14 @@ export function routes(app, ctx) {
       mine: row.citizen_id === user.id,
     };
   }
+  /** Attaches the caller's unattached photos in one statement, so two requests can never claim the same photo. */
   async function bindMedia(query, user, ids, purpose, complaintId) {
-    for (const id of ids) {
-      const media = await one('SELECT * FROM media WHERE id=?', [id], query);
-      check(
-        media &&
-          media.owner_id === user.id &&
-          !media.complaint_id &&
-          !media.content_id &&
-          media.purpose === purpose,
-        400,
-        'INVALID_MEDIA',
-        'A photo is unavailable or already attached.',
-      );
-    }
-    for (const id of ids) await query('UPDATE media SET complaint_id=? WHERE id=?', [complaintId, id]);
+    if (!ids.length) return;
+    const claimed = await query(
+      'UPDATE media SET complaint_id=? WHERE id = ANY(?::text[]) AND owner_id=? AND purpose=? AND complaint_id IS NULL AND content_id IS NULL RETURNING id',
+      [complaintId, ids, user.id, purpose],
+    );
+    check(claimed.length === ids.length, 400, 'INVALID_MEDIA', 'A photo is unavailable or already attached.');
   }
   app.post('/api/v1/complaints', resident, feature('reports'), verified, async (req, res) => {
     const input = parse(complaint, req.body),
@@ -244,15 +237,6 @@ export function routes(app, ctx) {
         'INVALID_DISTRICT',
         'Choose an Uttarakhand district.',
       );
-      for (const id of input.mediaIds) {
-        const media = await one('SELECT * FROM media WHERE id=?', [id], query);
-        check(
-          media && media.owner_id === req.user.id && !media.complaint_id && media.purpose === 'evidence',
-          400,
-          'INVALID_MEDIA',
-          'A photo is unavailable or already attached.',
-        );
-      }
       const id = randomUUID(),
         time = now(),
         reference = `BC-${time.slice(0, 10).replaceAll('-', '')}-${id.replaceAll('-', '').slice(0, 12).toUpperCase()}`;
@@ -284,8 +268,7 @@ export function routes(app, ctx) {
           .join(',')})`,
         Object.values(row),
       );
-      for (const mediaId of input.mediaIds)
-        await query('UPDATE media SET complaint_id=? WHERE id=?', [id, mediaId]);
+      await bindMedia(query, req.user, input.mediaIds, 'evidence', id);
       await query('INSERT INTO idempotency(user_id,request_key,payload_hash,complaint_id) VALUES(?,?,?,?)', [
         req.user.id,
         key,

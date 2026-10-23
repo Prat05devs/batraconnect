@@ -162,6 +162,11 @@ export function createJobs({ db, transports, notifier, store, options = {}, now 
       });
     return { reminded: soon.length };
   }
+  // A file that cannot be deleted is logged rather than failing the cleanup; the database row is already gone.
+  const removeFile = filename =>
+    store
+      .delete(filename)
+      .catch(e => console.error(JSON.stringify({ job: 'cleanup', file: filename, error: e.message })));
   async function cleanup() {
     const cutoff = iso(new Date(now().getTime() - 24 * 3600000));
     await db.query('DELETE FROM sessions WHERE expires_at<?', [iso(now())]);
@@ -170,16 +175,20 @@ export function createJobs({ db, transports, notifier, store, options = {}, now 
     await db.query(`DELETE FROM outbox WHERE status IN ('sent','skipped','failed') AND created_at<?`, [
       iso(new Date(now().getTime() - 30 * 86400000)),
     ]);
+    // Security records (who did what, from which address) are kept for one year, as the privacy policy states.
+    await db.query('DELETE FROM audit_log WHERE created_at<?', [
+      iso(new Date(now().getTime() - 365 * 86400000)),
+    ]);
     const orphans = await db.query(
       'DELETE FROM media WHERE complaint_id IS NULL AND content_id IS NULL AND created_at<? AND id NOT IN (SELECT unnest(media_ids) FROM complaint_events) RETURNING filename',
       [cutoff],
     );
-    for (const { filename } of orphans) await store.delete(filename).catch(() => {});
+    for (const { filename } of orphans) await removeFile(filename);
     let redacted = 0;
     if (options.retentionDays > 0) {
       const old = iso(new Date(now().getTime() - options.retentionDays * 86400000));
       const rows = await db.query(
-        `UPDATE complaints SET description='[Removed under the retention policy]',locality='[Removed]',latitude=NULL,longitude=NULL WHERE status='Closed' AND updated_at<? AND description<>'[Removed under the retention policy]' RETURNING id`,
+        `UPDATE complaints SET title='[Removed]',description='[Removed under the retention policy]',locality='[Removed]',latitude=NULL,longitude=NULL WHERE status IN ('Resolved','Closed') AND updated_at<? AND description<>'[Removed under the retention policy]' RETURNING id`,
         [old],
       );
       for (const { id } of rows)
@@ -187,7 +196,7 @@ export function createJobs({ db, transports, notifier, store, options = {}, now 
           'DELETE FROM media WHERE complaint_id=? RETURNING filename',
           [id],
         ))
-          await store.delete(filename).catch(() => {});
+          await removeFile(filename);
       redacted = rows.length;
     }
     return { orphans: orphans.length, redacted };

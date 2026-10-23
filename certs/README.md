@@ -1,3 +1,2 @@
-Put Supabase's CA certificate here as `supabase-ca.crt`
-(Supabase dashboard: Project Settings → Database → SSL configuration → Download certificate).
-It is a public certificate, not a secret, so it may be committed.
+Put a managed database's CA certificate here (for example `ca.crt`) and reference it with
+`?sslmode=verify-full&sslrootcert=certs/ca.crt` in `DATABASE_URL`. Not needed on the shared server.

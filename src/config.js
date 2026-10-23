@@ -11,7 +11,7 @@ export function config(env = process.env) {
   const production = env.NODE_ENV === 'production';
   const options = {
     url: env.DATABASE_URL,
-    // Keep below the database's connection limit (Supabase's pooler allows about 15 on the smallest plan).
+    // Keep below the database's connection limit; the shared server's PostgreSQL allows 100 across all apps.
     poolSize: int(env, 'DATABASE_POOL_SIZE', 10, 1, 100),
     production,
     mediaDir: env.MEDIA_DIR ?? './data/media',
@@ -79,7 +79,7 @@ export function config(env = process.env) {
       !['require', 'verify-ca', 'verify-full', 'no-verify'].includes(database.searchParams.get('sslmode'))
     )
       problems.push(
-        'DATABASE_URL points to another machine, so it must use TLS: add ?sslmode=verify-full&sslrootcert=<CA file> (Supabase: download the CA certificate from Database settings).',
+        'DATABASE_URL points to another machine, so it must use TLS: add ?sslmode=verify-full&sslrootcert=<CA file>.',
       );
     if (options.metricsToken && options.metricsToken.length < 24)
       problems.push('METRICS_TOKEN must be at least 24 characters.');

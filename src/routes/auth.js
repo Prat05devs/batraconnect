@@ -84,6 +84,17 @@ export function codes({ db, one, now, notifier }) {
   return { send, issue, consume };
 }
 
+/** An email or mobile number that another account already uses becomes a clear 409 instead of the generic conflict. */
+function contactTaken(e, emailMessage) {
+  if (e.code !== '23505') throw e;
+  const phone = e.constraint === 'users_phone';
+  throw new ApiError(
+    409,
+    phone ? 'PHONE_EXISTS' : 'EMAIL_EXISTS',
+    phone ? 'An account already uses this mobile number.' : emailMessage,
+  );
+}
+
 export function publicRoutes(app, ctx) {
   const { db, one, now, check, session, authLimit, dummyHash, audit } = ctx;
   const code = codes(ctx);
@@ -108,25 +119,15 @@ export function publicRoutes(app, ctx) {
       status: 'active',
       language: req.get('Accept-Language')?.startsWith('hi') ? 'hi' : 'en',
     };
-    try {
-      await db.transaction(async query => {
+    await db
+      .transaction(async query => {
         await query(
           'INSERT INTO users(id,name,email,password_hash,role,created_at,phone,status,language,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
           [...Object.values(user), user.created_at],
         );
         await code.send(query, user, 'verify_email', user.email, 'email');
-      });
-    } catch (e) {
-      if (e.code === '23505')
-        throw new ApiError(
-          409,
-          e.constraint === 'users_phone' ? 'PHONE_EXISTS' : 'EMAIL_EXISTS',
-          e.constraint === 'users_phone'
-            ? 'An account already uses this mobile number.'
-            : 'An account already uses this email. Please sign in.',
-        );
-      throw e;
-    }
+      })
+      .catch(e => contactTaken(e, 'An account already uses this email. Please sign in.'));
     await session(user, req, res, 201);
   });
   app.post('/api/v1/auth/login', authLimit, async (req, res) => {
@@ -270,30 +271,20 @@ export function routes(app, ctx) {
       values.push(input.email);
     }
     if (!changes.length) return res.json({ user: view(req) });
-    try {
-      const user = await db.transaction(async query => {
-        const [user] = await query(
+    const user = await db
+      .transaction(async query => {
+        const [updated] = await query(
           `UPDATE users SET ${changes.join(',')},updated_at=? WHERE id=? RETURNING *`,
           [...values, now(), req.user.id],
         );
         if (input.email && input.email !== req.user.email) {
-          await code.send(query, user, 'verify_email', user.email, 'email');
-          await audit(query, req, 'account.email_changed', 'user', user.id);
+          await code.send(query, updated, 'verify_email', updated.email, 'email');
+          await audit(query, req, 'account.email_changed', 'user', updated.id);
         }
-        return user;
-      });
-      res.json({ user: safeUser(user, req.user.jurisdictions) });
-    } catch (e) {
-      if (e.code === '23505')
-        throw new ApiError(
-          409,
-          e.constraint === 'users_phone' ? 'PHONE_EXISTS' : 'EMAIL_EXISTS',
-          e.constraint === 'users_phone'
-            ? 'An account already uses this mobile number.'
-            : 'An account already uses this email.',
-        );
-      throw e;
-    }
+        return updated;
+      })
+      .catch(e => contactTaken(e, 'An account already uses this email.'));
+    res.json({ user: safeUser(user, req.user.jurisdictions) });
   });
   app.post('/api/v1/account/password', ctx.authLimit, async (req, res) => {
     const input = parse(passwordChange, req.body);
@@ -395,6 +386,8 @@ export function routes(app, ctx) {
         `UPDATE appointments SET status='Cancelled',office_note='Account deleted',version=version+1,updated_at=? WHERE citizen_id=? AND status IN ('Requested','Confirmed')`,
         [now(), id],
       );
+      // What the person wrote about themselves goes; the anonymous report of a public problem stays (privacy policy).
+      await query(`UPDATE appointments SET subject='[Removed]',notes='' WHERE citizen_id=?`, [id]);
       await query(`UPDATE outbox SET status='skipped',body=NULL WHERE user_id=? AND status='pending'`, [id]);
       await audit(query, req, 'account.deleted', 'user', id);
     });

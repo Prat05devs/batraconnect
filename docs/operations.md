@@ -58,7 +58,7 @@ These run every `JOB_INTERVAL_SECONDS` (default 60) inside the API. They are saf
 | deliver | Sends queued push, email and SMS. It retries with backoff up to 6 times; dead push tokens are removed; one-time codes are erased after sending |
 | escalate | Raises reports past their deadline: level 1 → department, level 2 → administrators, level 3 → executives |
 | remind | Notifies citizens 24 hours before a confirmed Jan Samvad appointment |
-| cleanup | Removes expired sessions, codes and rate-limit rows; removes photos never attached after 24 hours; applies `CLOSED_REPORT_RETENTION_DAYS` if set |
+| cleanup | Removes expired sessions, codes and rate-limit rows; removes photos never attached after 24 hours, sent messages after 30 days and security (audit) records after one year; after `CLOSED_REPORT_RETENTION_DAYS` (production: 365, as the privacy policy states) removes the description, locality, coordinates and photos of resolved and closed reports |
 
 If your host can't run long-lived processes, set `RUN_JOBS=false` and run `npm run jobs:once` from cron every minute.
 
@@ -101,4 +101,4 @@ Node.js 24, root directory `web`, build `npm run build`, start `npm start`, envi
 The `preview` and `production` EAS build profiles already set `EXPO_PUBLIC_API_URL=https://api.batraconnect.com`; release builds also fall back to it.
 
 ### Alternative: managed database
-The API also runs against a managed PostgreSQL (for example Supabase or DigitalOcean Managed PostgreSQL) instead of the bundled container. Set `DATABASE_URL` with `sslmode=verify-full` and the provider's CA certificate in `certs/`, and `DATABASE_POOL_SIZE` below the provider's connection limit; see the comments in `.env.example`.
+The API also runs against a managed PostgreSQL (for example DigitalOcean Managed PostgreSQL) instead of the bundled container. Set `DATABASE_URL` with `sslmode=verify-full` and the provider's CA certificate in `certs/`, and `DATABASE_POOL_SIZE` below the provider's connection limit; see the comments in `.env.example`.

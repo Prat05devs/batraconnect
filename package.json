@@ -18,7 +18,8 @@
     "check": "for f in src/*.js src/routes/*.js scripts/*.js; do node --check \"$f\" || exit 1; done",
     "backup:verify": "sh scripts/restore-check.sh",
     "format": "prettier --write src scripts tests",
-    "format:check": "prettier --check src scripts tests"
+    "format:check": "prettier --check src scripts tests",
+    "lint": "eslint src scripts tests"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1150.0",
@@ -33,6 +34,9 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
     "prettier": "^3.9.10"
   }
 }
