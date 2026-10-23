@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { DataState, PageHeader, Pick, StatusBadge, formatDate, Field } from '@/components/common';
-import { api, errorMessage, photoUrl, uploadPhoto } from '@/lib/api';
+import { api, errorMessage, uploadPhoto } from '@/lib/api';
+import { usePhoto } from '@/lib/use-photo';
 import { useApi } from '@/lib/use-api';
 
 type Bilingual = { en: string; hi?: string } | null;
@@ -143,21 +144,7 @@ export function ContentList() {
 }
 
 function Thumbnail({ id, onRemove }: { id: string; onRemove: () => void }) {
-  const [src, setSrc] = useState<string | null>(null);
-  useEffect(() => {
-    let url: string | null = null;
-    let active = true;
-    photoUrl(id)
-      .then(u => {
-        url = u;
-        if (active) setSrc(u);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [id]);
+  const src = usePhoto(id);
   // unoptimized: the photo is private and loaded through the signed-in blob URL, not a public address.
   return (
     <div className="relative size-32 overflow-hidden rounded-lg border bg-muted">
