@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { copy, site, type Lang } from './content';
 
@@ -10,8 +9,7 @@ export function SiteHeader({ lang }: { lang: Lang }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0c2148]/95 text-white backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href={home} className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <Image src="/brand/icon.png" alt="" width={32} height={32} className="rounded-lg" priority />
+        <Link href={home} className="text-lg font-semibold tracking-tight">
           {site.name}
         </Link>
         <nav className="flex items-center gap-1 text-sm sm:gap-2">
@@ -20,6 +18,12 @@ export function SiteHeader({ lang }: { lang: Lang }) {
             className="hidden rounded-md px-3 py-2 text-white/80 hover:text-white md:block"
           >
             {t.features}
+          </a>
+          <a
+            href={`${home}#about`}
+            className="hidden rounded-md px-3 py-2 text-white/80 hover:text-white md:block"
+          >
+            {t.about}
           </a>
           <a
             href={`${home}#how`}
@@ -52,10 +56,7 @@ export function SiteFooter({ lang }: { lang: Lang }) {
     <footer className="border-t border-white/15 bg-[#0c2148] text-white/80">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr]">
         <div>
-          <div className="flex items-center gap-2.5 font-semibold text-white">
-            <Image src="/brand/icon.png" alt="" width={28} height={28} className="rounded-md" />
-            {site.name}
-          </div>
+          <p className="text-lg font-semibold text-white">{site.name}</p>
           <p className="mt-3 max-w-sm text-sm">{t.tagline}</p>
         </div>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -73,6 +74,16 @@ export function SiteFooter({ lang }: { lang: Lang }) {
             <a href={`mailto:${site.contactEmail}`} className="hover:text-white">
               {t.contact}
             </a>
+          </li>
+          <li>
+            <Link href="/about-the-app" className="hover:text-white">
+              {t.about}
+            </Link>
+          </li>
+          <li>
+            <Link href="/delete-account" className="hover:text-white">
+              {t.deletion}
+            </Link>
           </li>
           <li>
             <a href={ADMIN_URL} rel="nofollow" className="hover:text-white">

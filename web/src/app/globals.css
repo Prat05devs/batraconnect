@@ -129,3 +129,13 @@
     @apply font-sans;
   }
 }
+
+/* Landing hero: fills the active use case's bar while it is on the phone. */
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
