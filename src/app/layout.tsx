@@ -3,13 +3,13 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://batraconnect.com'),
-  title: { default: 'Batra Connect — coming soon', template: '%s · Batra Connect' },
+  title: { default: 'Batra Connect', template: '%s · Batra Connect' },
   description:
-    'Report local problems, follow them to resolution and stay in touch with the office of Shri Pradeep Batra. Coming soon to Android and iPhone.',
+    'An independent initiative of Shri Pradeep Batra, MLA for Roorkee: report local problems, follow them to resolution and book Jan Samvad meetings. Not a government app.',
   openGraph: {
     type: 'website',
     siteName: 'Batra Connect',
-    images: [{ url: '/brand/icon.png', width: 512, height: 512 }],
+    images: [{ url: '/brand/pradeep-batra.jpg', width: 485, height: 632 }],
   },
 };
 
