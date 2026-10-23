@@ -103,8 +103,8 @@ Put `COMPOSE_FILE=compose.yaml:compose.production.yaml` in an app's `.env` when 
 As `deploy`, after step 2:
 
 ```sh
-# Private repository: add a read-only deploy key (GitHub → Settings → Deploy keys) for this server first.
-git clone git@github.com:Prat05devs/batraconnect.git /opt/apps/batraconnect
+# The repository is public, so no key is needed. (If you make it private, add a read-only deploy key first.)
+git clone https://github.com/Prat05devs/batraconnect.git /opt/apps/batraconnect
 cd /opt/apps/batraconnect/backend
 server add-db batra                      # note the password it prints
 cat > .env <<EOF
