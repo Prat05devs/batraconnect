@@ -53,17 +53,17 @@ test('safeEqual compares bytes, so non-ASCII input is rejected instead of throwi
   assert.equal(safeEqual('same', 'same'), true);
 });
 
-test('production refuses a remote database without TLS and accepts Supabase with a verified certificate', () => {
+test('production refuses a remote database without TLS and accepts one with a verified certificate', () => {
   const prod = {
     NODE_ENV: 'production',
     CORS_ORIGINS: 'https://admin.example.in',
     CONFIG_MASTER_KEY: 'k'.repeat(40),
   };
-  const supabase = 'postgresql://postgres.abc:pw@aws-0-ap-south-1.pooler.supabase.com:5432/postgres';
-  assert.throws(() => config({ ...prod, DATABASE_URL: supabase }), /must use TLS/);
+  const managed = 'postgresql://batra:pw@db-postgresql-blr1-12345.db.ondigitalocean.com:25060/batra';
+  assert.throws(() => config({ ...prod, DATABASE_URL: managed }), /must use TLS/);
   const ok = config({
     ...prod,
-    DATABASE_URL: `${supabase}?sslmode=verify-full&sslrootcert=certs/supabase-ca.crt`,
+    DATABASE_URL: `${managed}?sslmode=verify-full&sslrootcert=certs/ca.crt`,
     DATABASE_POOL_SIZE: '5',
   });
   assert.equal(ok.poolSize, 5);

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { fixture, report } from './helpers.js';
 
 test('administrators invite staff, grant multiple jurisdictions, suspend and are audited; nobody else can', async t => {
@@ -292,7 +293,7 @@ test('overdue reports escalate once per level and notify the right people; analy
   assert.equal((await f.request('GET', '/api/v1/insights', null, otherDept.token)).data.totals.total, 0);
   const csv = await f.request('GET', '/api/v1/insights/export.csv', null, dept.token);
   assert.match(csv.headers.get('content-type'), /text\/csv/);
-  const lines = csv.data.replace(/^﻿/, '').split('\r\n');
+  const lines = csv.data.replace(/^\uFEFF/, '').split('\r\n');
   assert.equal(lines.length, 3);
   assert.ok(!csv.data.includes('Synthetic Citizen') && !csv.data.includes('HYPERLINK'), 'no titles or names');
   assert.equal((await f.request('GET', '/api/v1/insights/export.csv', null, citizen.token)).status, 403);
@@ -375,6 +376,32 @@ test('delivery honours preferences, retries transient failures and drops unregis
   await f.request('POST', '/api/v1/notifications/read-all', null, citizen.token);
   assert.equal((await f.request('GET', '/api/v1/notifications', null, citizen.token)).data.unread, 0);
 });
+test('a photo sent with two reports at the same moment is attached to only one', async t => {
+  const f = await fixture(t);
+  const citizen = await f.register();
+  const media = await f.photo(citizen.token);
+  const send = () =>
+    f.request('POST', '/api/v1/complaints', { ...report, mediaIds: [media.id] }, citizen.token, {
+      'Idempotency-Key': randomUUID(),
+    });
+  const results = await Promise.all([send(), send()]);
+  assert.deepEqual(results.map(r => r.status).sort(), [201, 400]);
+  assert.equal(
+    (await f.db.query('SELECT COUNT(*)::int AS n FROM media WHERE complaint_id IS NOT NULL'))[0].n,
+    1,
+  );
+  const other = await f.register('other@test.invalid');
+  const theirs = await f.request(
+    'POST',
+    '/api/v1/complaints',
+    { ...report, mediaIds: [media.id] },
+    other.token,
+    {
+      'Idempotency-Key': randomUUID(),
+    },
+  );
+  assert.equal(theirs.data.error.code, 'INVALID_MEDIA', "another person's photo cannot be attached");
+});
 test('orphaned uploads are cleaned up and photos are re-encoded without metadata', async t => {
   const f = await fixture(t);
   const citizen = await f.register();
@@ -389,6 +416,38 @@ test('orphaned uploads are cleaned up and photos are re-encoded without metadata
   ]);
   assert.equal((await f.jobs.cleanup()).orphans, 1);
   assert.equal((await f.request('GET', `/api/v1/media/${media.id}`, null, citizen.token)).status, 404);
+});
+test('a year after a report is finished its details and photos are removed', async t => {
+  const f = await fixture(t, { retentionDays: 365 });
+  const citizen = await f.register();
+  const media = await f.photo(citizen.token);
+  const fresh = await f.submit(citizen.token);
+  const old = await f.submit(citizen.token);
+  await f.db.query('UPDATE media SET complaint_id=? WHERE id=?', [old.id, media.id]);
+  const longAgo = new Date(Date.now() - 400 * 86400000).toISOString();
+  await f.db.query(`UPDATE complaints SET status='Resolved',updated_at=? WHERE id=?`, [longAgo, old.id]);
+  await f.db.query(`UPDATE complaints SET status='Closed' WHERE id=?`, [fresh.id]);
+  assert.equal((await f.jobs.cleanup()).redacted, 1);
+  const [row] = await f.db.query('SELECT description,latitude FROM complaints WHERE id=?', [old.id]);
+  assert.equal(row.description, '[Removed under the retention policy]');
+  assert.equal(row.latitude, null);
+  assert.equal(
+    (await f.db.query('SELECT COUNT(*)::int AS n FROM media WHERE complaint_id=?', [old.id]))[0].n,
+    0,
+  );
+  const [kept] = await f.db.query('SELECT description FROM complaints WHERE id=?', [fresh.id]);
+  assert.notEqual(
+    kept.description,
+    '[Removed under the retention policy]',
+    'recently closed reports are kept',
+  );
+  await f.db.query('UPDATE audit_log SET created_at=?', [longAgo]);
+  await f.jobs.cleanup();
+  assert.equal(
+    (await f.db.query('SELECT COUNT(*)::int AS n FROM audit_log'))[0].n,
+    0,
+    'security records older than a year are removed',
+  );
 });
 test('the work summary counts only what is waiting on each role', async t => {
   const f = await fixture(t);

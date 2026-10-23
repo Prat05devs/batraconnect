@@ -48,25 +48,18 @@ export function publicRoutes(app, { db, one, check, store }) {
 export function routes(app, ctx) {
   const { db, one, now, check, roles, audit } = ctx;
   const admin = roles('admin');
+  /** Sets an entry's gallery to exactly these photos: the admin's own unattached uploads or photos already on it. */
   async function attach(query, entryId, mediaIds, user) {
-    for (const id of mediaIds) {
-      const m = await one('SELECT * FROM media WHERE id=?', [id], query);
-      check(
-        m &&
-          m.purpose === 'gallery' &&
-          !m.complaint_id &&
-          (!m.content_id || m.content_id === entryId) &&
-          (m.owner_id === user.id || m.content_id === entryId),
-        400,
-        'INVALID_MEDIA',
-        'A gallery photo is unavailable.',
-      );
-    }
+    const usable = await query(
+      `SELECT id FROM media WHERE id = ANY(?::text[]) AND purpose='gallery' AND complaint_id IS NULL AND (content_id=? OR (content_id IS NULL AND owner_id=?)) FOR UPDATE`,
+      [mediaIds, entryId, user.id],
+    );
+    check(usable.length === new Set(mediaIds).size, 400, 'INVALID_MEDIA', 'A gallery photo is unavailable.');
     await query(`UPDATE media SET content_id=NULL WHERE content_id=? AND NOT (id = ANY(?::text[]))`, [
       entryId,
       mediaIds,
     ]);
-    for (const id of mediaIds) await query('UPDATE media SET content_id=? WHERE id=?', [entryId, id]);
+    await query('UPDATE media SET content_id=? WHERE id = ANY(?::text[])', [entryId, mediaIds]);
   }
   const data = input => ({
     title: input.title,

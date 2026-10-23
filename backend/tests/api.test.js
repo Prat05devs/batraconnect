@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import pg from 'pg';
 import { createDatabase } from '../src/db.js';
 import { fixture, password, report, png } from './helpers.js';
 test('registration cannot grant roles; credentials, CORS, logout and expiry are enforced', async t => {
@@ -232,55 +231,5 @@ test('PostgreSQL records remain after a new connection pool is opened', async t 
     assert.equal(rows[0].email, 'citizen@test.invalid');
   } finally {
     await reopened.close();
-  }
-});
-test('Supabase Data API roles cannot read any table, including tables added by later migrations', async () => {
-  const admin = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });
-  await admin.connect();
-  const schema = `batra_rls_${randomUUID().replaceAll('-', '')}`;
-  let db;
-  try {
-    // Recreate Supabase's setup: Data API roles that receive every new table by default.
-    for (const role of ['anon', 'authenticated'])
-      await admin.query(
-        `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='${role}') THEN CREATE ROLE ${role} NOLOGIN; END IF; END $$`,
-      );
-    await admin.query(`CREATE SCHEMA ${schema}`);
-    await admin.query(`GRANT USAGE ON SCHEMA ${schema} TO anon, authenticated`);
-    await admin.query(
-      `ALTER DEFAULT PRIVILEGES IN SCHEMA ${schema} GRANT ALL ON TABLES TO anon, authenticated`,
-    );
-    const url = new URL(process.env.TEST_DATABASE_URL);
-    url.searchParams.set('options', `-c search_path=${schema}`);
-    db = await createDatabase({ url: url.toString(), poolSize: 2 });
-    await admin.query(`CREATE TABLE ${schema}.added_later (id TEXT PRIMARY KEY)`);
-    await admin.query(`GRANT ALL ON ${schema}.added_later TO anon, authenticated`);
-    await db.close();
-    db = await createDatabase({ url: url.toString(), poolSize: 2 }); // restart covers the new table
-    const tables = await admin.query(
-      `SELECT relname, relrowsecurity FROM pg_class WHERE relnamespace=$1::regnamespace AND relkind='r'`,
-      [schema],
-    );
-    assert.ok(tables.rows.length > 25);
-    assert.deepEqual(
-      tables.rows.filter(t => !t.relrowsecurity).map(t => t.relname),
-      [],
-    );
-    for (const role of ['anon', 'authenticated'])
-      for (const table of ['users', 'sessions', 'complaints', 'added_later'])
-        assert.equal(
-          (
-            await admin.query(`SELECT has_table_privilege($1, $2, 'SELECT') AS ok`, [
-              role,
-              `${schema}.${table}`,
-            ])
-          ).rows[0].ok,
-          false,
-          `${role} must not read ${table}`,
-        );
-  } finally {
-    await db?.close();
-    await admin.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
-    await admin.end();
   }
 });

@@ -225,6 +225,11 @@ test('account export contains the owner data; deletion anonymises and blocks sig
     'reports are retained without identity',
   );
   assert.equal(
+    (await f.db.query(`SELECT COUNT(*)::int AS n FROM sessions WHERE user_id=?`, [a.user.id]))[0].n,
+    0,
+    'every sign-in session is ended',
+  );
+  assert.equal(
     (await f.register('citizen@test.invalid', { verified: false })).user.email,
     'citizen@test.invalid',
     'email can be reused',

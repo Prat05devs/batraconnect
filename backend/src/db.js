@@ -39,30 +39,8 @@ export async function createDatabase({ url, poolSize = 10 } = {}) {
 }
 
 /**
- * Supabase publishes tables to its "anon" and "authenticated" roles through its Data API. All data must go through
- * this API, so every table has row-level security on with no policies (those roles see nothing; the API connects as
- * the table owner, which RLS does not restrict) and those roles hold no table privileges. It runs after migrations
- * on every start, so tables added later are covered too. On plain PostgreSQL the roles do not exist; only RLS applies.
- */
-const PRIVATE_TABLES = `DO $$
-DECLARE t record; r record;
-BEGIN
-  FOR t IN SELECT relname FROM pg_class
-    WHERE relnamespace = current_schema()::regnamespace AND relkind = 'r' AND NOT relrowsecurity LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t.relname);
-  END LOOP;
-  FOR r IN SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated') LOOP
-    IF EXISTS (SELECT 1 FROM information_schema.role_table_grants
-               WHERE grantee = r.rolname AND table_schema = current_schema()) THEN
-      EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I', current_schema(), r.rolname);
-    END IF;
-    EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I REVOKE ALL ON TABLES FROM %I', current_schema(), r.rolname);
-  END LOOP;
-END $$`;
-
-/**
  * Applies each numbered migration once, in order, in one transaction. The lock is transaction-scoped so it also
- * works through connection poolers (Supabase session or transaction mode), and replicas can start together.
+ * works through connection poolers, and replicas can start together.
  */
 async function migrate(pool) {
   const files = (await readdir(migrationsDir)).filter(f => /^\d{3}_[a-z0-9_]+\.sql$/.test(f)).sort();
@@ -87,7 +65,6 @@ async function migrate(pool) {
         new Date().toISOString(),
       ]);
     }
-    await client.query(PRIVATE_TABLES);
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK').catch(() => {});

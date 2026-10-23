@@ -7,7 +7,7 @@ test('dashboard keys are stored encrypted, shown masked, testable and restorable
   const admin = await f.staff('admin'),
     dept = await f.staff('department');
   assert.equal((await f.request('GET', '/api/v1/admin/integrations', null, dept.token)).status, 403);
-  let res = await f.request(
+  const res = await f.request(
     'PUT',
     '/api/v1/admin/integrations/email',
     {
