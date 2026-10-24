@@ -8,7 +8,7 @@ For the person deploying and running the Batra Connect API. Everything here is i
 |---|---|---|
 | A Linux host with Docker and root access (2 vCPU / 4 GB is ample to start; 2 GB works), e.g. a DigitalOcean droplet (Ubuntu 26.04 LTS) — see section 9 | Runs API, PostgreSQL, backups and the shared Caddy proxy | — |
 | A random master key (`openssl rand -base64 48`), stored safely outside the server too | Encrypts provider keys saved in the dashboard; the API refuses to start without it | `CONFIG_MASTER_KEY` |
-| The web dashboard's address, e.g. `https://admin.batraconnect.com` | Only listed web origins may call the API from a browser | `CORS_ORIGINS` |
+| The web dashboard's address, e.g. `https://batraconnect.com` | Only listed web origins may call the API from a browser | `CORS_ORIGINS` |
 | API domain, e.g. `api.batraconnect.com`, with a DNS A/AAAA record to the host | HTTPS certificate is issued automatically for it | `deploy/api.caddy` |
 | SMTP account (any provider: Amazon SES, Zoho, Google Workspace relay…) | Verification, password-reset and staff-invite codes, email updates. Nobody can verify or reset until one is set | `SMTP_URL`, `EMAIL_FROM`, or the dashboard's Integrations page |
 | Twilio account + Indian DLT-registered sender and templates (optional) | SMS codes and SMS updates. Indian operators drop unregistered SMS | `SMS_PROVIDER=twilio`, `TWILIO_*` |
@@ -81,8 +81,7 @@ If your host can't run long-lived processes, set `RUN_JOBS=false` and run `npm r
 | Address | What runs there | Where |
 |---|---|---|
 | `api.batraconnect.com` | This API, on the droplet's shared Caddy (HTTPS) and PostgreSQL, with nightly backups | DigitalOcean droplet |
-| `admin.batraconnect.com` | The web dashboard (`../web`, Next.js) | Hostinger Node.js web app |
-| `batraconnect.com` | The landing page (same Next.js app) | Hostinger |
+| `batraconnect.com` | The landing page, with the web dashboard at `/admin` (`../web`, Next.js) | Hostinger Node.js web app |
 
 The app and the dashboard call the API only at `https://api.batraconnect.com`.
 
@@ -94,8 +93,8 @@ Then:
 2. **Off-host backups:** database dumps land in `/opt/backups/postgres/batra/` (nightly and before every deploy), and the API's own backup adds database and photo archives to `/opt/apps/batraconnect/backend/backups`. Copy both off the droplet every day, e.g. with `rclone` to a DigitalOcean Spaces bucket from cron. Run the monthly restore test in section 4.
 3. Add an uptime monitor (e.g. UptimeRobot) on `https://api.batraconnect.com/health/ready` every 5 minutes.
 
-### Hostinger: dashboard app (`admin.batraconnect.com`)
-Node.js 24, root directory `web`, build `npm run build`, start `npm start`, environment `NEXT_PUBLIC_API_URL=https://api.batraconnect.com` (it is baked in at build time, so rebuild after changing it; `web/.env.production` already sets it).
+### Hostinger: website and dashboard (`batraconnect.com`)
+Framework preset **Next.js** (not React: React serves static files only and the site returns 403), Node.js 24, root directory `web`, build `npm run build`, output `.next`, environment `NEXT_PUBLIC_API_URL=https://api.batraconnect.com` (it is baked in at build time, so rebuild after changing it; `web/.env.production` already sets it).
 
 ### Mobile app
 The `preview` and `production` EAS build profiles already set `EXPO_PUBLIC_API_URL=https://api.batraconnect.com`; release builds also fall back to it.
