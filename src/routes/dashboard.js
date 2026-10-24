@@ -9,13 +9,20 @@ const INTEGRATIONS = ['email', 'sms', 'push'];
 const privateAddress = ip =>
   /^(::ffff:)?(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)|^::1$|^f[cd]/i.test(ip ?? '');
 
-/** Public: what the mobile app needs to know at launch (feature switches, maintenance banner). */
-export function publicRoutes(app, { settings }) {
+/**
+ * Public: what the mobile app needs to know at launch: feature switches, maintenance banner, whether citizens must
+ * verify a contact before sending, and whether email codes can be delivered (sign-in codes, password reset).
+ */
+export function publicRoutes(app, { settings, options }) {
   app.get('/api/v1/config', async (_req, res) => {
-    const app_ = await settings.get('app');
-    res
-      .set('Cache-Control', 'public, max-age=30')
-      .json({ features: await settings.get('features'), maintenanceMessage: app_.maintenanceMessage });
+    const app_ = await settings.get('app'),
+      delivery = await settings.delivery(options.delivery);
+    res.set('Cache-Control', 'public, max-age=30').json({
+      features: await settings.get('features'),
+      maintenanceMessage: app_.maintenanceMessage,
+      verificationRequired: options.requireVerified,
+      email: !!delivery.smtpUrl || !!delivery.allowLog || options.testing,
+    });
   });
 }
 
