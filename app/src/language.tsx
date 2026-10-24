@@ -78,7 +78,9 @@ export function LanguageSwitch() {
     <View
       accessibilityRole="radiogroup"
       accessibilityLabel="Language / भाषा"
-      style={{ flexDirection: 'row', gap: 2, borderRadius: 12, backgroundColor: '#EAF2FF' }}
+      // A capsule with even inner padding, so it sits cleanly inside the rounded "glass" group iOS 26+ draws
+      // around header buttons (square corners inside it looked misaligned).
+      style={{ flexDirection: 'row', gap: 2, padding: 3, borderRadius: 999, backgroundColor: '#EAF2FF' }}
     >
       {(['en', 'hi'] as const).map(value => (
         <Pressable
@@ -88,12 +90,12 @@ export function LanguageSwitch() {
           accessibilityState={{ checked: language === value }}
           onPress={() => setLanguage(value)}
           style={({ pressed }) => ({
-            minWidth: 48,
-            minHeight: 48,
-            paddingHorizontal: 8,
+            minWidth: 52,
+            minHeight: 42,
+            paddingHorizontal: 12,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 12,
+            borderRadius: 999,
             backgroundColor: language === value ? '#0C2148' : 'transparent',
             opacity: pressed ? 0.7 : 1,
           })}

@@ -135,6 +135,8 @@ function Routes() {
           headerTintColor: C.navy,
           headerStyle: { backgroundColor: C.background },
           headerShadowVisible: false,
+          // Only the chevron: otherwise iOS labels it with the previous route, e.g. the group name "(tabs)".
+          headerBackButtonDisplayMode: 'minimal',
           contentStyle: { backgroundColor: C.background },
           animation: 'none',
           ...(navigation.canGoBack() ? {} : { headerLeft: homeButton }),

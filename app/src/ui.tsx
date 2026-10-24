@@ -103,10 +103,9 @@ export function Button({
       onPress={onPress}
       className="min-h-[52px] w-full rounded-xl px-4 py-3"
     >
-      <Text
-        style={s.buttonText}
-        className={secondary ? 'text-secondary-foreground' : 'text-primary-foreground'}
-      >
+      {/* The colour goes in style: on iOS and Android a style colour overrides className, so white here hid
+          secondary labels on their pale background. */}
+      <Text style={[s.buttonText, { color: secondary ? C.blue : C.white }]}>
         {label}
       </Text>
       {icon && <Icon name={icon} color={secondary ? C.blue : C.white} size={20} />}
