@@ -11,7 +11,7 @@ import { useSubmissions } from './submissions';
 import { useCopy, useFormat } from './connected-ui';
 import { canActAsResident, isStaff } from './api-client';
 import { useAuth } from './auth';
-import { useFeature } from './app-config';
+import { useFeature, useNeedsVerification } from './app-config';
 import { AchievementHighlights } from './AchievementScreens';
 import { filterReports } from './report-search';
 import { categories } from './model';
@@ -27,9 +27,8 @@ export function Home() {
   const reporting = useFeature('reports'),
     ideasOn = useFeature('ideas'),
     bookingOn = useFeature('appointments');
+  const unverified = useNeedsVerification();
   if (isStaff(session?.user.role)) return <StaffToday />;
-  const unverified =
-    session?.user.role === 'citizen' && !session.user.emailVerified && !session.user.phoneVerified;
   return (
     <Page>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

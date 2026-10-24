@@ -10,6 +10,8 @@ export const links = {
   about: `${WEBSITE}/about-the-app`,
   /** WT IT Solutions builds and runs the app; support is by email only. */
   feedback: 'mailto:admin@wtsolutions.cc?subject=Batra%20Connect%20feedback',
+  /** Until the server can email reset codes, an administrator resets passwords from the dashboard. */
+  passwordHelp: 'mailto:admin@wtsolutions.cc?subject=Batra%20Connect%20password%20reset',
 } as const;
 export const open = (url: string) => void Linking.openURL(url);
 

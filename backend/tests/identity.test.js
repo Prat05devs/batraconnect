@@ -3,6 +3,20 @@ import assert from 'node:assert/strict';
 import { fixture, password, report } from './helpers.js';
 import { randomUUID } from 'node:crypto';
 
+test('with REQUIRE_VERIFIED_CONTACT off, /config says so and unverified citizens can submit', async t => {
+  const strict = await fixture(t);
+  const on = (await strict.request('GET', '/api/v1/config')).data;
+  assert.equal(on.verificationRequired, true);
+  assert.equal(on.email, true, 'testing delivers codes');
+  const f = await fixture(t, { requireVerified: false });
+  assert.equal((await f.request('GET', '/api/v1/config')).data.verificationRequired, false);
+  const a = await f.register('open@test.invalid', { verified: false });
+  const sent = await f.request('POST', '/api/v1/complaints', report, a.token, {
+    'Idempotency-Key': randomUUID(),
+  });
+  assert.equal(sent.status, 201);
+});
+
 test('unverified citizens cannot submit; codes verify once, expire on misuse and are delivered then scrubbed', async t => {
   const f = await fixture(t);
   const a = await f.register('new@test.invalid', { verified: false });

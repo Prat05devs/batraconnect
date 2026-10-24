@@ -11,6 +11,7 @@ import { pushState, type PushState } from './push';
 import { Badge, Chips, Gate, Loading, Toggle, useCopy, useFormat, useResource } from './connected-ui';
 import { Body, Button, Card, Field, Notice, Page, Row, Section, Title, s } from './ui';
 import { disclaimer, links, open } from './legal';
+import { useEmailCodes, useNeedsVerification, useVerificationRequired } from './app-config';
 
 const phoneHint = (copy: ReturnType<typeof useCopy>) =>
   copy(
@@ -27,6 +28,8 @@ export function SignIn() {
   const router = useRouter();
   const copy = useCopy();
   const f = useFormat();
+  const emailCodes = useEmailCodes(),
+    verificationRequired = useVerificationRequired();
   const [mode, setMode] = useState<'password' | 'code' | 'register'>('password');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -61,7 +64,11 @@ export function SignIn() {
   }
   const done = (user: Account) => {
     setPassword('');
-    router.replace(user.role === 'citizen' && !user.emailVerified && !user.phoneVerified ? '/verify' : '/');
+    router.replace(
+      verificationRequired && user.role === 'citizen' && !user.emailVerified && !user.phoneVerified
+        ? '/verify'
+        : '/',
+    );
   };
   return (
     <Page>
@@ -76,7 +83,7 @@ export function SignIn() {
           'रिपोर्ट भेजें, सुझाव दें, जन संवाद बुक करें और अपने डिवाइसों पर प्रगति देखें।',
         )}
       </Body>
-      {mode !== 'register' && (
+      {mode !== 'register' && emailCodes && (
         <Chips
           label={copy('Sign in with', 'लॉगिन का तरीका')}
           value={mode}
@@ -212,10 +219,15 @@ export function SignIn() {
           />
           {mode === 'register' && (
             <Text verbatim style={s.small}>
-              {copy(
-                'Use at least 12 characters. We will email you a code to verify your address. Staff accounts are created by an administrator.',
-                'कम से कम 12 अक्षर रखें। ईमेल सत्यापन के लिए हम कोड भेजेंगे। स्टाफ खाते प्रशासक बनाते हैं।',
-              )}
+              {verificationRequired
+                ? copy(
+                    'Use at least 12 characters. We will email you a code to verify your address. Staff accounts are created by an administrator.',
+                    'कम से कम 12 अक्षर रखें। ईमेल सत्यापन के लिए हम कोड भेजेंगे। स्टाफ खाते प्रशासक बनाते हैं।',
+                  )
+                : copy(
+                    'Use at least 12 characters. Staff accounts are created by an administrator.',
+                    'कम से कम 12 अक्षर रखें। स्टाफ खाते प्रशासक बनाते हैं।',
+                  )}
             </Text>
           )}
           <Button
@@ -236,7 +248,7 @@ export function SignIn() {
                   phone.trim() ? normalizePhone(phone) : undefined,
                 );
                 setPassword('');
-                router.replace(mode === 'register' ? '/verify' : '/');
+                router.replace(mode === 'register' && verificationRequired ? '/verify' : '/');
               })
             }
           />
@@ -245,8 +257,16 @@ export function SignIn() {
               secondary
               disabled={busy}
               label={copy('Forgot password?', 'पासवर्ड भूल गए?')}
-              onPress={() => router.push('/forgot-password')}
+              onPress={() => (emailCodes ? router.push('/forgot-password') : open(links.passwordHelp))}
             />
+          )}
+          {mode === 'password' && !emailCodes && (
+            <Text verbatim style={s.small}>
+              {copy(
+                'Forgot your password? Email admin@wtsolutions.cc from the address on your account and we will reset it.',
+                'पासवर्ड भूल गए? अपने खाते वाले ईमेल से admin@wtsolutions.cc पर लिखें, हम उसे रीसेट कर देंगे।',
+              )}
+            </Text>
           )}
         </>
       )}
@@ -552,6 +572,7 @@ export function AccountCard() {
   const f = useFormat();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const unverified = useNeedsVerification();
   if (!session)
     return (
       <Card>
@@ -569,7 +590,6 @@ export function AccountCard() {
       </Card>
     );
   const user = session.user;
-  const unverified = user.role === 'citizen' && !user.emailVerified && !user.phoneVerified;
   return (
     <Card>
       <Section verbatim>{copy('Your Batra Connect account', 'आपका बत्रा कनेक्ट खाता')}</Section>
@@ -634,6 +654,7 @@ function AccountSettingsBody() {
   const router = useRouter();
   const copy = useCopy();
   const f = useFormat();
+  const emailCodes = useEmailCodes();
   const user = session!.user;
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone ?? '');
@@ -766,12 +787,12 @@ function AccountSettingsBody() {
             updateUser(result.user);
             setCurrent('');
             setInfo(copy('Profile saved.', 'प्रोफ़ाइल सहेजी गई।'));
-            if (emailChanged) router.push('/verify');
+            if (emailChanged && emailCodes) router.push('/verify');
             else if (body.phone) router.push({ pathname: '/verify', params: { channel: 'phone' } });
           })
         }
       />
-      {(!user.emailVerified || (user.phone && !user.phoneVerified)) && (
+      {emailCodes && (!user.emailVerified || (user.phone && !user.phoneVerified)) && (
         <Button
           secondary
           label={copy('Verify contact details', 'संपर्क विवरण सत्यापित करें')}

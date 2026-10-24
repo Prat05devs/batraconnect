@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Location from 'expo-location';
 import { useAuth } from './auth';
+import { useNeedsVerification } from './app-config';
 import { useSubmissions } from './submissions';
 import { useStore } from './store';
 import { useReferenceData } from './reference-data';
@@ -25,7 +26,8 @@ export function ReportScreen() {
   const { session } = useAuth();
   const [locating, setLocating] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
-  const verified = !!session && (session.user.emailVerified || session.user.phoneVerified);
+  const needsVerification = useNeedsVerification(),
+    verified = !!session && !needsVerification;
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);

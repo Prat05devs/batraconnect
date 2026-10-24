@@ -225,7 +225,7 @@ export async function createApp({
     jurisdictionsOf,
     dummyHash,
     authLimit,
-    options: { requireClosureEvidence, testing, sessionDays, delivery, production },
+    options: { requireClosureEvidence, requireVerified, testing, sessionDays, delivery, production },
   };
 
   app.get('/health/live', (_req, res) => res.json({ status: 'ok' }));

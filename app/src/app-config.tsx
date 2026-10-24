@@ -8,6 +8,10 @@ type Audience = { citizens: boolean; officers: boolean };
 export type AppConfig = {
   features: { reports: Audience; ideas: Audience; appointments: Audience };
   maintenanceMessage: string;
+  /** Citizens must verify an email or mobile number before sending (server setting REQUIRE_VERIFIED_CONTACT). */
+  verificationRequired?: boolean;
+  /** The server can email codes: one-time sign-in, verification and password reset. */
+  email?: boolean;
 };
 const KEY = 'batra-connect.config.v1',
   allOn: Audience = { citizens: true, officers: true };
@@ -47,6 +51,20 @@ export function ConfigProvider({ children }: React.PropsWithChildren) {
     };
   }, []);
   return <Context.Provider value={config}>{children}</Context.Provider>;
+}
+/** Whether the server can email codes. A copy saved before this setting existed counts as yes. */
+export function useEmailCodes() {
+  return useContext(Context).email !== false;
+}
+/** Whether citizens must verify a contact before sending. A copy saved before this setting existed counts as yes. */
+export function useVerificationRequired() {
+  return useContext(Context).verificationRequired !== false;
+}
+/** Whether the signed-in citizen must still verify a contact before sending reports, ideas or bookings. */
+export function useNeedsVerification() {
+  const required = useVerificationRequired();
+  const user = useAuth().session?.user;
+  return required && !!user && user.role === 'citizen' && !user.emailVerified && !user.phoneVerified;
 }
 /** Whether the signed-in person (or a visitor, treated as a citizen) may use a feature right now. */
 export function useFeature(name: keyof AppConfig['features']) {
