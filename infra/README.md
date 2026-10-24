@@ -112,7 +112,7 @@ COMPOSE_PROJECT_NAME=batra
 COMPOSE_FILE=compose.yaml:compose.production.yaml
 DB_PASSWORD=<the password from add-db>
 CONFIG_MASTER_KEY=$(openssl rand -base64 48)
-CORS_ORIGINS=https://admin.batraconnect.com
+CORS_ORIGINS=https://batraconnect.com
 BACKUP_DIR=./backups
 BACKUP_KEEP_DAYS=14
 EOF

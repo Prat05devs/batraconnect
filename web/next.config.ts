@@ -19,16 +19,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // One app serves both sites: batraconnect.com (public pages) and admin.batraconnect.com (dashboard).
+  // One app serves the public pages and the dashboard (batraconnect.com/admin); www redirects to the bare domain.
   async redirects() {
     return [
-      { source: '/', has: [{ type: 'host', value: 'admin\\..+' }], destination: '/admin', permanent: false },
-      {
-        source: '/admin/:path*',
-        has: [{ type: 'host', value: '(www\\.)?batraconnect\\.com' }],
-        destination: 'https://admin.batraconnect.com/admin/:path*',
-        permanent: true,
-      },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www\\.batraconnect\\.com' }],

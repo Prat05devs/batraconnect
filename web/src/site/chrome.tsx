@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { copy, site, type Lang } from './content';
 
-const ADMIN_URL = 'https://admin.batraconnect.com/admin';
+const ADMIN_URL = '/admin';
 
 export function SiteHeader({ lang }: { lang: Lang }) {
   const t = copy[lang].nav;

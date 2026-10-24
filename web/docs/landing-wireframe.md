@@ -41,4 +41,4 @@ Purpose: announce the app ("coming soon"), show what is inside it, and give the 
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Pages: `/` (English), `/hi` (Hindi), `/privacy`, `/terms`. The admin dashboard stays on `admin.batraconnect.com`; `batraconnect.com/admin` redirects there.
+Pages: `/` (English), `/hi` (Hindi), `/privacy`, `/terms`. The admin dashboard is at `batraconnect.com/admin` (not indexed: robots.txt disallows it).
