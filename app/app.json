@@ -8,6 +8,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.batraconnect.app",
+      "appleTeamId": "9Q56J23Z23",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -43,6 +44,7 @@
     },
     "scheme": "batra-connect",
     "plugins": [
+      "./plugins/with-quoted-bundle-script",
       "expo-router",
       [
         "expo-image-picker",
