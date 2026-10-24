@@ -36,6 +36,6 @@ The API must allow the dashboard's address in `CORS_ORIGINS` (already set for `l
 
 ## Production
 
-`npm run build` then `npm start` (any Node.js host; planned address `admin.batraconnect.com`, with the landing page on batraconnect.com later). Set `NEXT_PUBLIC_API_URL` to the public API address before building (it is baked into the build), add the dashboard's `https://` address to the API's `CORS_ORIGINS`, and set `CONFIG_MASTER_KEY` on the API (32+ random characters; it encrypts the keys saved under Integrations — keep a copy safe, losing it means re-entering those keys).
+`npm run build` then `npm start` (any Node.js host; on Hostinger at `batraconnect.com/admin`, next to the landing page). Set `NEXT_PUBLIC_API_URL` to the public API address before building (it is baked into the build), add the dashboard's `https://` address to the API's `CORS_ORIGINS`, and set `CONFIG_MASTER_KEY` on the API (32+ random characters; it encrypts the keys saved under Integrations — keep a copy safe, losing it means re-entering those keys).
 
 The dashboard session lasts until the browser tab is closed. Two-step sign-in was intentionally left out for now to keep the product simple; it is a recommended addition before handing over to a department.
